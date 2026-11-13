@@ -54,13 +54,11 @@ TALPAD的/proc/version记录的编译环境是llvm-r383902
 
 我准备了一些脚本，如下：
 
-1.~~执行Integrate_sukisu.sh~~（等SUSFS支持之后吧）
+1.~~执行Integrate_sukisu.sh~~
 
-2.~~执行Integrate_SUSFS.sh~~（没兼容）
+2.执行download_clang.sh
 
-3.执行download_clang.sh
-
-4.最后执行build-mt8797.sh
+3.最后执行build-mt8797.sh
 
 注意：这些脚本目前还处于开发阶段，因此可能会造成一些意外的问题
 
