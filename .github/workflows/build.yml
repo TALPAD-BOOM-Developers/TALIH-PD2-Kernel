@@ -2,7 +2,7 @@ name: Build and Release Kernel
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [ main, master, sukisu ]
     tags: [ '*' ]
   workflow_dispatch:
     inputs:
@@ -52,10 +52,8 @@ jobs:
             echo "使用分支自带集成脚本 .github/ci/su-setup.sh"
             .github/ci/su-setup.sh
           elif grep -qE '^CONFIG_KSU=y' arch/arm64/configs/*defconfig; then
-            echo "defconfig 启用 CONFIG_KSU —— 按 ReSukiSU 默认流程集成"
-            rm -rf KernelSU drivers/kernelsu
-            git checkout -- drivers/Makefile drivers/Kconfig
-            curl -LSs "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/main/kernel/setup.sh" | bash
+            echo "::error::defconfig 启用 CONFIG_KSU 但缺少 .github/ci/su-setup.sh"
+            exit 1
           else
             echo "defconfig 未启用 CONFIG_KSU —— 跳过后端集成（纯内核构建）"
           fi
