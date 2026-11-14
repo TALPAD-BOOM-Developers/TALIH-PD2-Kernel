@@ -172,7 +172,7 @@ jobs:
           while IFS= read -r ko; do
             cp "$ko" modules-out/
             found=$((found+1))
-          done < <(find lkms -name '*.ko' -type f)
+          done < <(find lkms patch/lkm/hybridmount -name '*.ko' -type f)
           if [ "$found" -eq 0 ]; then
             echo "::error::没有任何 LKM 编译成功（.ko 数量为 0）"
             exit 1
