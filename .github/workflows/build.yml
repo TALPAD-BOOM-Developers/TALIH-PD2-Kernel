@@ -172,7 +172,7 @@ jobs:
           while IFS= read -r ko; do
             cp "$ko" modules-out/
             found=$((found+1))
-          done < <(find lkms patch/lkm/hybridmount -name '*.ko' -type f)
+          done < <(find lkms -name '*.ko' -type f)
           if [ "$found" -eq 0 ]; then
             echo "::error::没有任何 LKM 编译成功（.ko 数量为 0）"
             exit 1
@@ -234,62 +234,12 @@ jobs:
           echo "可加载性门禁通过：内核 CONFIG 前提 + 机制导入 + 全符号解析全部 OK"
 
 
-      - name: Package LKM module zip
-        if: env.LKM_ENABLED == '1'
-        run: |
-          STAGE=modules-zip
-          rm -rf "$STAGE"
-          mkdir -p "$STAGE/system/lib/modules"
-          cp modules-out/*.ko "$STAGE/system/lib/modules/"
-
-          cat > "$STAGE/module.prop" <<'PROP'
-          id=talih-lkm-collection
-          name=TALIH LKM Collection
-          version=${{ github.sha }}
-          versionCode=1
-          author=Kevin233B
-          description=PathMask, hma-uidfake, Kasumi and hybridmount for MT8797 4.19.191.
-          PROP
-          sed -i 's/^          //' "$STAGE/module.prop"
-
-          cat > "$STAGE/customize.sh" <<'CUST'
-          SKIPUNZIP=0
-          ui_print "- TALIH LKM Collection"
-          CUST
-          sed -i 's/^          //' "$STAGE/customize.sh"
-
-          cat > "$STAGE/post-fs-data.sh" <<'PFD'
-          #!/system/bin/sh
-          MODDIR=${0%/*}
-          KO_DIR=$MODDIR/system/lib/modules
-          for ko in pathmask procguard hma_uidfake kasumi_lkm hybridmount; do
-              [ -f "$KO_DIR/$ko.ko" ] || continue
-              [ -d "/sys/module/$ko" ] && continue
-              insmod "$KO_DIR/$ko.ko" 2>/dev/null || insmod -f "$KO_DIR/$ko.ko" 2>/dev/null
-          done
-          PFD
-          sed -i 's/^          //' "$STAGE/post-fs-data.sh"
-
-          cat > "$STAGE/uninstall.sh" <<'UNIN'
-          #!/system/bin/sh
-          for ko in hybridmount kasumi_lkm hma_uidfake procguard pathmask; do
-              [ -d "/sys/module/$ko" ] && rmmod "$ko" 2>/dev/null
-          done
-          UNIN
-          sed -i 's/^          //' "$STAGE/uninstall.sh"
-
-          chmod 755 "$STAGE/customize.sh" "$STAGE/post-fs-data.sh" "$STAGE/uninstall.sh"
-          chmod 644 "$STAGE/system/lib/modules/"*.ko
-          ( cd "$STAGE" && zip -r9 "../modules-out/talih-lkm-collection.zip" . -x '.*' >/dev/null )
-          unzip -l modules-out/talih-lkm-collection.zip
       - name: Upload LKMs
         if: env.LKM_ENABLED == '1' && hashFiles('patch/lkm/**') != ''
         uses: actions/upload-artifact@v4
         with:
           name: lkm-modules
-          path: |
-            modules-out/*.ko
-            modules-out/*.zip
+          path: modules-out/*.ko
           retention-days: 14
           if-no-files-found: error
 
