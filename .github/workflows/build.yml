@@ -144,6 +144,26 @@ jobs:
             CROSS_COMPILE=aarch64-linux-gnu- LLVM=1 LLVM_IAS=1 \
             M=$PWD/lkms/Kasumi/src modules
 
+      - name: Build hybridmount (hybridmount.ko, vendored from Hybrid-Mount 6.2.5-2118 vfs/src)
+        if: env.LKM_ENABLED == '1' && hashFiles('patch/lkm/hybridmount_4.19_compat.patch') != ''
+        continue-on-error: true
+        run: |
+          # vfs 后端（NoMount fork，路径重定向、零挂载条目）——仓库内置 pristine 源码；
+          # 4.19 兼容补丁存在时才应用，保持 vendor 副本不可变（对齐其他 LKM 的 pristine+patch 模式）
+          if [ -f patch/lkm/hybridmount_4.19_compat.patch ]; then
+            patch -p1 -d patch/lkm/hybridmount < patch/lkm/hybridmount_4.19_compat.patch
+          else
+            echo "无 4.19 兼容补丁，直接编译 vendored 源码（源码自带 4.11+ 版本守卫）"
+          fi
+          CLANG_PATH="$PWD/prebuilts/clang/host/linux-x86/clang-r383902"
+          CLANG_BIN="$CLANG_PATH/bin"
+          make -k O=out ARCH=arm64 \
+            CC=$CLANG_BIN/clang LD=$CLANG_BIN/ld.lld AR=$CLANG_BIN/llvm-ar NM=$CLANG_BIN/llvm-nm \
+            OBJCOPY=$CLANG_BIN/llvm-objcopy OBJDUMP=$CLANG_BIN/llvm-objdump READELF=$CLANG_BIN/llvm-readelf \
+            OBJSIZE=$CLANG_BIN/llvm-size STRIP=$CLANG_BIN/llvm-strip \
+            CROSS_COMPILE=aarch64-linux-gnu- LLVM=1 LLVM_IAS=1 \
+            M=$PWD/patch/lkm/hybridmount modules
+
       - name: Collect and report LKMs
         if: env.LKM_ENABLED == '1'
         run: |
